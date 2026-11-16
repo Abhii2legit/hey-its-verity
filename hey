@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Space Shooter</title>
+<style>
+body {
+  background: #080820;
+  color: white;
+  text-align: center;
+  font-family: Arial;
+}
+canvas {
+  background: black;
+  border: 3px solid cyan;
+  max-width: 95%;
+}
+</style>
+</head>
+<body>
+
+<h1>🚀 SPACE SHOOTER</h1>
+<p>Score: <span id="score">0</span></p>
+<canvas id="game" width="400" height="500"></canvas>
+<p>Move: Arrow Keys | Shoot: Space</p>
+<button onclick="location.reload()">Restart</button>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player = {x:180, y:440, w:40, h:35};
+let bullets = [];
+let enemies = [];
+let score = 0;
+let gameOver = false;
+let keys = {};
+
+document.onkeydown = e => keys[e.code] = true;
+document.onkeyup = e => keys[e.code] = false;
+
+function shoot() {
+  bullets.push({x:player.x+17, y:player.y});
+}
+
+let cooldown = 0;
+
+function update() {
+  if(gameOver) return;
+
+  if(keys.ArrowLeft) player.x -= 5;
+  if(keys.ArrowRight) player.x += 5;
+  if(keys.ArrowUp) player.y -= 5;
+  if(keys.ArrowDown) player.y += 5;
+
+  player.x = Math.max(0, Math.min(360, player.x));
+  player.y = Math.max(0, Math.min(465, player.y));
+
+  if(keys.Space && cooldown <= 0) {
+    shoot();
+    cooldown = 12;
+  }
+  cooldown--;
+
+  bullets.forEach(b => b.y -= 8);
+  enemies.forEach(e => e.y += 2);
+
+  bullets.forEach(b => {
+    enemies.forEach(e => {
+      if(b.x < e.x+30 && b.x+6 > e.x &&
+         b.y < e.y+30 && b.y+10 > e.y) {
+        e.dead = true;
+        b.dead = true;
+        score += 10;
+      }
+    });
+  });
+
+  bullets = bullets.filter(b => !b.dead && b.y > 0);
+  enemies = enemies.filter(e => !e.dead && e.y < 510);
+
+  if(Math.random() < 0.025) {
+    enemies.push({x:Math.random()*365, y:0});
+  }
+
+  enemies.forEach(e => {
+    if(e.x < player.x+player.w &&
+       e.x+30 > player.x &&
+       e.y < player.y+player.h &&
+       e.y+30 > player.y) {
+       gameOver = true;
+    }
+  });
+
+  document.getElementById("score").innerText = score;
+}
+
+function draw() {
+  ctx.clearRect(0,0,400,500);
+
+  ctx.fillStyle = "cyan";
+  ctx.fillRect(player.x,player.y,player.w,player.h);
+
+  ctx.fillStyle = "yellow";
+  bullets.forEach(b => ctx.fillRect(b.x,b.y,6,12));
+
+  ctx.fillStyle = "red";
+  enemies.forEach(e => ctx.fillRect(e.x,e.y,30,30));
+
+  if(gameOver) {
+    ctx.fillStyle = "white";
+    ctx.font = "35px Arial";
+    ctx.fillText("GAME OVER",85,250);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
